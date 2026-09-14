@@ -3,7 +3,7 @@
  *
  * 产物 rhine.global.js 是一个 IIFE 经典脚本，暴露全局 RHINE：
  *   RHINE.ArchiveScene   —— 移植自 src/scene.ts 的编排类
- *   RHINE.RhineArray     —— KbMonitor 侧的宿主封装
+ *   RHINE.RhineArray     —— RhineLab_KbMonitor 侧的宿主封装
  *   RHINE.coursesToRecords / RHINE.data —— 数据适配与调试入口
  *   RHINE.motion / RHINE.archiveDrag / RHINE.archiveLoop —— 纯逻辑，便于自检
  *

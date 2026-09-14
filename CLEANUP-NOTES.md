@@ -1,4 +1,4 @@
-# KbMonitor 干净副本
+# RhineLab_KbMonitor —— 清理记录
 
 本目录是旧工程目录（3.05 GB，原路径含个人标识，已从本文档隐去）的清理副本。
 **旧目录一个字节未动**，仍可原样使用或回退。
@@ -29,7 +29,7 @@
 ## 1. 目录结构
 
 ```
-KbMonitor-clean\
+RhineLab_KbMonitor\
 ├─ monitor_kb.py            后端：抓取 / 解密 / 解析 / 推送
 ├─ fetch_kb.py              独立抓取脚本
 ├─ wechat_ui.py             微信 UI 推送通道

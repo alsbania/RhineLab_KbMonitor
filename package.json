@@ -1,8 +1,8 @@
 {
-  "name": "kbmonitor",
+  "name": "rhinelab-kbmonitor",
   "version": "1.0.0",
   "private": true,
-  "description": "KbMonitor —— 正方教务系统（jwglxt）课表监控。Python 后端 + pywebview 桌面端，课程列表用 three.js 渲染成 RhineLabUI 风格的 3D 档案阵列。",
+  "description": "RhineLab_KbMonitor —— 正方教务系统（jwglxt）课表监控。Python 后端 + pywebview 桌面端，课程列表用 three.js 渲染成 RhineLabUI 风格的 3D 档案阵列。",
   "//type": "刻意不声明 \"type\": \"module\" —— kbapp/*.mjs 靠扩展名已是 ESM，而 web_ui_test.js 是 CommonJS，声明 module 会让它 require 报错。",
   "engines": {
     "node": ">=18"

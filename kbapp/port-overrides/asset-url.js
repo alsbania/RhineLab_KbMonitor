@@ -4,7 +4,7 @@
  * 上游 src/asset-url.ts 依赖两个 Vite 构建期常量：
  *   import.meta.env.PROD / BASE_URL   —— Vite 注入
  *   __RHINE_MODELS__                  —— scripts/export-records.mjs 注入的模型哈希表
- * 这两样在 KbMonitor 里都不存在（没有构建链，pywebview 直接以 file:// 加载）。
+ * 这两样在 RhineLab_KbMonitor 里都不存在（没有构建链，pywebview 直接以 file:// 加载）。
  *
  * 这里保持同名同签名，但换一套「把模型带进来」的办法：
  *

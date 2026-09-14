@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""KbMonitor 桌面端 —— pywebview 宿主。
+"""RhineLab_KbMonitor 桌面端 —— pywebview 宿主。
 GUI 模式：展示课表 / 配置 / 日志 / 定时任务管理。
 --silent-check：无窗口静默执行一次检查（供 Windows 任务计划调用）。
 """
@@ -24,7 +24,7 @@ if _ROOT not in sys.path:
 
 import monitor_kb as core  # noqa: E402
 
-APP_TITLE = "KbMonitor · 课表监控"
+APP_TITLE = "RhineLab_KbMonitor · 课表监控"
 LEGACY_TASKS = ["课表监控_10点", "课表监控_17点"]
 
 
@@ -462,8 +462,8 @@ class Api:
             cfg = core.load_config(core.CONFIG_PATH)
         except Exception as e:
             return {"ok": False, "error": str(e)}
-        sent = core.push(cfg, "KbMonitor 测试",
-                         "这是一条来自 KbMonitor 的测试推送。\n时间："
+        sent = core.push(cfg, "RhineLab_KbMonitor 测试",
+                         "这是一条来自 RhineLab_KbMonitor 的测试推送。\n时间："
                          + dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         return {"ok": sent, "error": "" if sent else "发送失败，请检查推送通道与网络（详见日志）"}
 
@@ -614,7 +614,7 @@ def main():
     args = ap.parse_args()
 
     if args.version:
-        print("KbMonitor 1.0.0")
+        print("RhineLab_KbMonitor 1.0.0")
         return 0
     if args.silent_check:
         try:
@@ -630,9 +630,9 @@ def main():
         try:
             import ctypes
             ctypes.windll.user32.MessageBoxW(
-                None, "KbMonitor 已经在运行了。\n\n请使用已打开的窗口；"
+                None, "RhineLab_KbMonitor 已经在运行了。\n\n请使用已打开的窗口；"
                       "关闭界面不影响后台定时监控（由系统任务负责）。",
-                "KbMonitor", 0x40)
+                "RhineLab_KbMonitor", 0x40)
         except Exception:
             pass
         return 0

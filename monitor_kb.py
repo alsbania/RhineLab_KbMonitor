@@ -662,7 +662,7 @@ def run(cfg, args):
                 desp_lines.append("📗 现状：课表已开放，共 {} 门课：".format(len(rows)))
                 desp_lines += schedule_text(rows[:40])
                 if len(rows) > 40:
-                    desp_lines.append("…其余 {} 门请在 KbMonitor 界面查看或导出 CSV".format(len(rows) - 40))
+                    desp_lines.append("…其余 {} 门请在 RhineLab_KbMonitor 界面查看或导出 CSV".format(len(rows) - 40))
             else:
                 desp_lines.append("📭 现状：课表尚未开放（0 门课），监控继续等待，开放后立即通知你。")
             desp_lines += ["", "检查时间表：{}".format(" / ".join(times)),

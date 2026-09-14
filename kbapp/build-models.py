@@ -30,7 +30,7 @@ SRC = os.environ.get(
 )
 OUT_DIR = os.path.join(HERE, "web", "vendor", "models")
 
-# 变量名 -> 源文件。KbMonitor 只用单体档案匣；拆解用的 assembly 暂不需要。
+# 变量名 -> 源文件。RhineLab_KbMonitor 只用单体档案匣；拆解用的 assembly 暂不需要。
 MODELS = {
     "archiveCassette": "archive-cassette.glb",
 }

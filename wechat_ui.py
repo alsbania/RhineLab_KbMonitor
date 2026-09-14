@@ -182,5 +182,5 @@ def _send_to_wechat_impl(contact, text):
 
 
 if __name__ == "__main__":
-    ok, msg = send_to_wechat("文件传输助手", "KbMonitor 测试消息 " + time.strftime("%H:%M:%S"))
+    ok, msg = send_to_wechat("文件传输助手", "RhineLab_KbMonitor 测试消息 " + time.strftime("%H:%M:%S"))
     print(("OK: " if ok else "FAIL: ") + msg)

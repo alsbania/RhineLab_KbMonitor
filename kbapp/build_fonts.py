@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-RhineLabUI 的 MiSans 网页分包 -> KbMonitor 专用字体集。
+RhineLabUI 的 MiSans 网页分包 -> RhineLab_KbMonitor 专用字体集。
 
 上游 `misans-webfont@4.3.1/<weight>/*.woff2` 是按 unicode-range 切成 188 份的
 CID-keyed CFF（单字重约 6 MB），fontTools 无法合并 CID-keyed CFF

@@ -3,7 +3,7 @@
  *
  * 为什么要打包：
  *   · three 0.183 只提供 ESM；
- *   · KbMonitor 的页面由 pywebview 以 file:// 加载，Chromium 在 file:// 下
+ *   · RhineLab_KbMonitor 的页面由 pywebview 以 file:// 加载，Chromium 在 file:// 下
  *     禁止 ES module 的 import（CORS），所以不能用 <script type="module">；
  *   · 因此必须产出 IIFE 经典脚本，用普通 <script> 加载。
  *

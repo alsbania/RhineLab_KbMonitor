@@ -1,6 +1,6 @@
 <div align="center">
 
-# KbMonitor
+# RhineLab_KbMonitor
 
 **课表监控 + 微信推送** —— 挂在后台盯着教务系统，课表一变就推给你
 

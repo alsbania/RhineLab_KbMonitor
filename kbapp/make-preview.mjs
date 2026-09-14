@@ -1,5 +1,5 @@
 /**
- * 生成 KbMonitor 的浏览器预览壳（开发验证用，不属于产品）。
+ * 生成 RhineLab_KbMonitor 的浏览器预览壳（开发验证用，不属于产品）。
  *
  * 把 kbapp/web/index.html 的 body 内联进来（去掉它的 script 标签），
  * 注入一份假的 pywebview API，再挂上生产用的 app.js —— 这样不用启动 exe
@@ -115,7 +115,7 @@ const STUB = `
     tasks_status: function () { return d({ installed: false, tasks: [] }); },
     install_tasks: function () { return d({ ok: true }); },
     uninstall_tasks: function () { return d({ ok: true }); },
-    get_logs: function () { return d('[06:20:00] 启动 KbMonitor'); },
+    get_logs: function () { return d('[06:20:00] 启动 RhineLab_KbMonitor'); },
     clear_logs: function () { return d({ ok: true }); }
   } };
   window.dispatchEvent(new Event('pywebviewready'));
@@ -127,7 +127,7 @@ const out = `<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>KbMonitor 预览</title>
+<title>RhineLab_KbMonitor 预览</title>
 ${styleLinks.map((h) => `<link rel="stylesheet" href="${h}">`).join('\n')}
 ${vendorScripts.map((s) => `<script src="${s}"></script>`).join('\n')}
 </head>

@@ -2,12 +2,12 @@
  * data.js —— 改写版（放在 kbapp/port-overrides/，由 port-rhine.mjs 优先取用）
  *
  * 上游 src/data.ts 从 content/archives.json 读 40 份虚构档案，并把它们
- * 按五个栏目分列。KbMonitor 没有档案，有的是课表；但阵列的编排逻辑
+ * 按五个栏目分列。RhineLab_KbMonitor 没有档案，有的是课表；但阵列的编排逻辑
  * （列宽 COLUMN_SPACING、行距 ROW_SPACING、每列 8 份、行坐标 = 12 + 列内序号）
  * 完全依赖这个数据形状，所以这里保持**接口逐行一致**，只换数据来源。
  *
  * 对应关系：
- *   上游 archiveColumns  五类档案        -> KbMonitor 周一…周五
+ *   上游 archiveColumns  五类档案        -> RhineLab_KbMonitor 周一…周五
  *   上游 records         40 份档案       -> 当周课程
  *   上游 columnFiles(l)  该列档案索引    -> 该天的课程索引
  *   上游 fileLocation(i) 档案的行列坐标  -> 同一套坐标公式，原样保留

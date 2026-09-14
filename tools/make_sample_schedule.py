@@ -97,7 +97,7 @@ PARTS = {
         '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
         'xmlns:dc="http://purl.org/dc/elements/1.1/">'
         "<dc:title>示例课表（虚构）</dc:title>"
-        "<dc:creator>KbMonitor</dc:creator>"
+        "<dc:creator>RhineLab_KbMonitor</dc:creator>"
         "</cp:coreProperties>",
 }
 

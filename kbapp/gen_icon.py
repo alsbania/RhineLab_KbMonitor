@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""生成 KbMonitor 应用图标 icon.ico —— 莱茵生命「无限」标记。
+"""生成 RhineLab_KbMonitor 应用图标 icon.ico —— 莱茵生命「无限」标记。
 
 标记的两环在右上 / 左下各有一处缺口，手画的实心环复现不出来。因此这里
 直接使用 RhineLabUI `src/brand.ts` 的原始路径数据：先用 Edge headless
