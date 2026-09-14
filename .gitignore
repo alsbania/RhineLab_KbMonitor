@@ -58,3 +58,8 @@ kbapp/RhineLabUI-main/public/fonts/misans-webfont-4.3.1/
 # ---- 开发预览壳（kbapp/make-preview.mjs 的生成物）----
 # 每次跑 npm run preview 都会整份重写，之前被跟踪导致界面一改就产生无谓 diff。
 kbapp/web/_shell.html
+
+# ---- 打包时同步出的运行时覆盖目录（build_exe.ps1 每次构建重写）----
+# app.py 的 resource_path 优先读 exe 同目录的 web/，读不到才用内置资源。
+# 注意前导斜杠：只锚定仓库根，别误伤 kbapp/web/（那才是界面的唯一源）。
+/web/
