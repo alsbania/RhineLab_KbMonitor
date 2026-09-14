@@ -7,7 +7,10 @@
   生成后本脚本会自己调一次那个解析器做验证，避免造出一张导不进去的表。
 
 内容全部虚构：课程名、教师姓、教室都是编的，与任何学校/真人无关。
-输出：示例课表.xlsx（可用 --out 改名）
+输出：example.xlsx（可用 --out 改名）
+
+文件名刻意用纯 ASCII：中文名在 git 里会被转义成 \\347\\244\\272 这种八进制形式
+（core.quotepath 默认开启），换机器或换终端时容易出编码问题。
 """
 import argparse
 import os
@@ -101,7 +104,7 @@ PARTS = {
 
 def main():
     ap = argparse.ArgumentParser(description="生成虚构的示例课表 xlsx")
-    ap.add_argument("--out", default="示例课表.xlsx", help="输出文件名")
+    ap.add_argument("--out", default="example.xlsx", help="输出文件名")
     ap.add_argument("--no-verify", action="store_true", help="跳过用 app.py 解析器自检")
     args = ap.parse_args()
 

@@ -28,8 +28,27 @@ Python 后端 · pywebview 桌面端 · three.js 3D 档案阵列
 - **周课表**：单双周、跨周段、相邻节次自动合并、同格重叠并排显示
 - **两种视图**：常规周课表 + three.js 档案阵列（可拖拽、有入场与聚焦动效）
 - **手工课表**：支持从 Excel 导入，或手动增删改课程
+- **内置示例课表**：没配账号也能看到完整界面（见下）
 - **定时任务**：一键注册 Windows 任务计划（每天 10:00 / 17:00）
 - **离线优先**：查不到网络时显示上次的课表快照，而不是清空
+
+## 先看看长什么样（不用账号）
+
+仓库里带了一张**虚构的示例课表**，导入后界面立刻有内容，全程不联网、不需要学号密码：
+
+```bash
+python tools/apply_sample_schedule.py      # 装入示例课表（13 门虚构课程）
+python tools/apply_sample_schedule.py --clear   # 卸载，恢复联网查询
+```
+
+不想用脚本的话，直接在界面上点「导入 Excel」选 `example.xlsx` 也一样。
+
+示例课表的课程名、教师、教室全部虚构，覆盖了单周 / 双周 / 跨周段 / 同日换老师 /
+两教师合上 / 连堂课这几种容易出问题的情形，方便验证界面。想改内容就编辑
+`tools/make_sample_schedule.py` 顶部的 `ROWS` 再重新生成。
+
+> 装入示例课表会把 `config.json` 的 `use_manual` 置为 `true`，其语义是
+> **以手工课表为准、不再联网查询** —— 这正是它不需要账号就能显示的原因。
 
 ## 快速开始
 
@@ -93,18 +112,24 @@ python monitor_kb.py --xnm 2025-2026 --xqm 3
 npm test             # 离线 UI 回归（121 项：周次解析 / 块几何 / 重叠 / 疏密 / 样式契约）
 npm run assets       # 重建 3D 资产链（移植 → three bundle → 阵列 bundle → GLB 内联）
 npm run preview      # 生成开发预览壳 kbapp/web/_shell.html
+
+python tools/make_sample_schedule.py --out example.xlsx   # 重新生成示例课表（会自检能否被导入）
 ```
+
+`make_sample_schedule.py` 只用标准库写 xlsx（`inlineStr`，不需要 `openpyxl`），
+生成后会调用 `app.py` 的导入解析器自检一遍 —— 避免造出一张导不进去的表。
 
 目录结构与模块职责：
 
 ```
 monitor_kb.py        后端核心：登录 / 抓取 / 解析 / 对比 / 推送 / 状态
-kbapp/app.py         pywebview 宿主与 JS API
+kbapp/app.py         pywebview 宿主与 JS API（含 xlsx 导入解析）
 kbapp/web/           页面本体（app.js / app.css / index.html / 字体 / 3D bundle）
 kbapp/*.mjs          three.js 与阵列 bundle 的构建脚本（依赖 esbuild）
 kbapp/port-overrides/ 对上游移植件的改写版（权威源，port-rhine 直接取用）
 vendor/three-src     three.js r183 运行源码
 vendor/three-jms     three.js examples/jsm（构建 addon 的来源）
+tools/               示例课表生成与装入脚本（虚构数据，供预览界面用）
 ```
 
 几条踩过坑的设计约束，改代码前值得一读：

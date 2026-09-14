@@ -16,7 +16,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CFG = os.path.join(ROOT, "config.json")
-XLSX = os.path.join(ROOT, "示例课表.xlsx")
+XLSX = os.path.join(ROOT, "example.xlsx")
 
 PLACEHOLDERS = {
     ("auth", "username"): "<你的学号>",
