@@ -1,0 +1,13 @@
+{
+  "source": "RhineLabUI public/assets（Blender MCP 生成）",
+  "builtBy": "kbapp/build-models.py",
+  "because": "file:// 下 fetch 被 CORS 拦，模型需内联为经典脚本",
+  "models": {
+    "archive-cassette.glb": {
+      "script": "archive-cassette.js",
+      "var": "archiveCassette",
+      "bytes": 3565116,
+      "scriptBytes": 4753951
+    }
+  }
+}

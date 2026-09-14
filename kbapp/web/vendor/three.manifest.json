@@ -1,0 +1,21 @@
+{
+  "name": "three",
+  "version": "0.183.0",
+  "license": "MIT",
+  "source": "vendor/three-src（取自 npm three@0.183.0）",
+  "builtBy": "kbapp/build-three.mjs",
+  "format": "iife（经典脚本，暴露全局 THREE）",
+  "addons": [
+    "environments/RoomEnvironment.js",
+    "postprocessing/EffectComposer.js",
+    "postprocessing/RenderPass.js",
+    "postprocessing/SMAAPass.js",
+    "postprocessing/OutputPass.js",
+    "loaders/GLTFLoader.js",
+    "postprocessing/SSAOPass.js",
+    "postprocessing/BokehPass.js",
+    "postprocessing/Pass.js"
+  ],
+  "bytes": 1996602,
+  "inputs": 22
+}

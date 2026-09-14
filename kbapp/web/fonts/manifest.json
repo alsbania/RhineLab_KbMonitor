@@ -1,0 +1,37 @@
+{
+  "source": "misans-webfont@4.3.1 (MiSans 4.003)",
+  "license": "MiSans 字体许可（小米）—— 见 License/LICENSE-MiSans.pdf",
+  "generator": "kbapp/build_fonts.py",
+  "charset": "界面可见文字（剥注释，HTML 文本+属性 / JS 字符串 / CSS content）",
+  "user_data_hanzi": "regular 档额外并入 GB2312 常用汉字，覆盖课程名等导入数据",
+  "weights": {
+    "light": {
+      "css_weight": 300,
+      "faces": 35,
+      "glyphs": 1329,
+      "bytes_in": 6100360,
+      "bytes_out": 157848
+    },
+    "regular": {
+      "css_weight": 400,
+      "faces": 51,
+      "glyphs": 7467,
+      "bytes_in": 6087780,
+      "bytes_out": 1220764
+    },
+    "demibold": {
+      "css_weight": 600,
+      "faces": 51,
+      "glyphs": 7467,
+      "bytes_in": 6109468,
+      "bytes_out": 1226592
+    },
+    "bold": {
+      "css_weight": 700,
+      "faces": 36,
+      "glyphs": 1329,
+      "bytes_in": 6163676,
+      "bytes_out": 160168
+    }
+  }
+}

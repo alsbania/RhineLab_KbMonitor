@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="light">
+<title>KbMonitor · 课表监控</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="app.css">
+<!--
+  界面字体：莱茵生命官网同款 MiSans（由 kbapp/build_fonts.py 从上游网页分包
+  子集化而来，共 153 个 woff2 / 763 KB）。
+  这四个文件里全是 @font-face + unicode-range，必须显式引入才会生效 ——
+  app.css 只是把 "MiSans" 写在 --font-sans 的第一位，光有名字不会加载字体，
+  没有这几行时整个界面都在吃 PingFang SC / 微软雅黑的回退字。
+-->
+<link rel="stylesheet" href="fonts/misans-regular.css">
+<link rel="stylesheet" href="fonts/misans-demibold.css">
+<link rel="stylesheet" href="fonts/misans-light.css">
+<link rel="stylesheet" href="fonts/misans-bold.css">
+<!--
+  三维档案阵列的运行时：必须是「经典脚本」，不能用 type="module"。
+  pywebview 以 file:// 加载页面，Chromium 在 file:// 下禁止 ES module 的
+  import（CORS），也禁止 fetch —— 所以 three.js 与阵列都打成 IIFE，
+  档案模型内联成 base64 经典脚本。
+  产物由 kbapp/build-*.mjs 与 build-models.py 生成，来源是
+  kbapp\RhineLabUI-main\src\scene.ts 及其依赖（逐行移植，见 port-rhine.mjs）。
+-->
+<script src="vendor/three.global.js"></script>
+<script src="vendor/models/archive-cassette.js"></script>
+<script src="vendor/rhine.global.js"></script>
+</head>
+<body>
+<!-- 图标精灵：全站统一线性图标，避免混用 emoji 造成的风格割裂 -->
+<svg class="svg-sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9.5h18M9 9.5V21M15 9.5V21"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2.2"/><circle cx="9" cy="17" r="2.2"/></symbol>
+  <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M6 3.5h9.5a2 2 0 0 1 2 2V18a2.5 2.5 0 0 0 2.5 2.5H8.5A2.5 2.5 0 0 1 6 18V3.5Z"/><path d="M9.5 8h5M9.5 11.5h5"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4.5V10h-5.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.8 19 12 7 19.2Z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v10.5M8 11l4 4 4-4M5 19.5h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9L17.5 7"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3.5V7M16 3.5V7"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M10 3.5h4M10.8 3.5v5.2L6.4 17a3 3 0 0 0 2.6 4.4h6a3 3 0 0 0 2.6-4.4l-4.4-8.3V3.5"/><path d="M8.4 14.5h7.2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h10"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.8 12S6 6.2 12 6.2 21.2 12 21.2 12 18 17.8 12 17.8 2.8 12 2.8 12Z"/><circle cx="12" cy="12" r="2.9"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M4 4l16 16"/><path d="M9.6 5.2A9.6 9.6 0 0 1 12 5c6 0 9.2 7 9.2 7a17 17 0 0 1-2.6 3.5M6.6 7.2A16.6 16.6 0 0 0 2.8 12S6 19 12 19a9.4 9.4 0 0 0 3.6-.7"/><path d="M9.9 10a2.9 2.9 0 0 0 4 4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.2A8.4 8.4 0 0 1 9.8 4a8.6 8.6 0 1 0 10.2 10.2Z"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M14.5 5.5 8 12l6.5 6.5"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9.5 5.5 16 12l-6.5 6.5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.5 10a5.5 5.5 0 0 1 11 0c0 4.5 1.8 6 1.8 6H4.7s1.8-1.5 1.8-6Z"/><path d="M10 19.2a2.2 2.2 0 0 0 4 0"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M20.5 3.5 3.8 10.2l6 2.4 2.4 6Z"/><path d="M20.5 3.5 9.8 12.6"/></symbol>
+  <symbol id="i-cap" viewBox="0 0 24 24"><path d="M2.8 8.8 12 4.5l9.2 4.3L12 13.1Z"/><path d="M6.4 11v4.4c0 1.4 2.6 2.6 5.6 2.6s5.6-1.2 5.6-2.6V11"/></symbol>
+  <symbol id="i-ruler" viewBox="0 0 24 24"><rect x="2.8" y="8.5" width="18.4" height="7" rx="1.8"/><path d="M7.5 8.5v3M12 8.5v3M16.5 8.5v3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.2V12l3.4 2"/></symbol>
+  <symbol id="i-dot" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-glasses" viewBox="0 0 24 24"><circle cx="7" cy="13.5" r="3.8"/><circle cx="17" cy="13.5" r="3.8"/><path d="M10.8 13.5h2.4M3.2 11 4.6 6.5h3M20.8 11 19.4 6.5h-3"/></symbol>
+  <!-- 莱茵生命标记（取自素材库 brand.ts 的连续轮廓） -->
+  <symbol id="i-rhine" viewBox="0 0 310 145"><path d="M156 75C127 48 103 15 70 15C37 15 15 39 15 70S38 128 70 128C103 128 127 96 176 52M155 75C182 99 208 128 240 128C273 128 295 105 295 73S273 15 240 15C221 15 207 23 192 38" fill="none" stroke="currentColor" stroke-width="26"/><path d="M44 70h50M69 45v50M219 70h44" fill="none" stroke="currentColor" stroke-width="15"/></symbol>
+</svg>
+
+<div id="app">
+  <!-- ==================== 侧栏 ==================== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <svg class="brand-mark" aria-hidden="true"><use href="#i-rhine"></use></svg>
+      <div class="brand-text">
+        <b>KbMonitor</b>
+        <small>课表变化监控中心</small>
+      </div>
+    </div>
+
+    <!--
+      莱茵生命品牌字样（三行锁定排版，纯装饰，aria-hidden）。
+      规格直接照搬上游按原片 13.48s 量出来的排版：容器 270px 宽，
+      第一行 44px / 48px 行高 / 2.5px 字距；
+      第二行 19px / 23px / 600 字重 / .65px 字距；
+      第三行 35px / 40px、右端对齐、3px 字距。
+      这里用 --u = 侧栏内容宽 / 270 等比换算，窄断点下比例关系不走样。
+    -->
+    <div class="brand-plate" aria-hidden="true">
+      <span class="bp-line1">RHINE LAB</span>
+      <span class="bp-line2">ANALYSIS</span>
+      <span class="bp-line3">OS</span>
+    </div>
+
+    <nav class="nav" aria-label="主导航">
+      <button class="nav-item active" data-tab="schedule" type="button" aria-current="page">
+        <svg class="ico"><use href="#i-grid"></use></svg><span>课表总览</span>
+        <i class="nav-idx" aria-hidden="true">01</i>
+      </button>
+      <button class="nav-item" data-tab="list" type="button">
+        <svg class="ico"><use href="#i-list"></use></svg><span>课程清单</span>
+        <i class="nav-idx" aria-hidden="true">02</i>
+      </button>
+      <button class="nav-item" data-tab="settings" type="button">
+        <svg class="ico"><use href="#i-sliders"></use></svg><span>设置</span>
+        <i class="nav-idx" aria-hidden="true">03</i>
+      </button>
+      <button class="nav-item" data-tab="logs" type="button">
+        <svg class="ico"><use href="#i-scroll"></use></svg><span>运行日志</span>
+        <i class="nav-idx" aria-hidden="true">04</i>
+      </button>
+    </nav>
+
+    <div class="side-foot">
+      <div class="ribbon">
+        <div class="ribbon-row">
+          <span class="ribbon-key">状态</span>
+          <span class="status-pill idle" id="statusPill"><svg class="ico"><use href="#i-dot"></use></svg>空闲</span>
+        </div>
+        <div class="ribbon-row">
+          <span class="ribbon-key">调度</span>
+          <span class="ribbon-val" id="nextRun">加载中…</span>
+        </div>
+      </div>
+      <div class="side-sign">本地运行 · 不上传任何数据</div>
+      <!-- 上游开机序列里的公司署名，只作落款 -->
+      <div class="side-corp">RHINE LAB.LLC.</div>
+    </div>
+  </aside>
+
+  <!-- ==================== 主区 ==================== -->
+  <main>
+    <header class="topbar">
+      <div class="topbar-lead">
+        <span class="eyebrow">KBMONITOR / 监控台</span>
+        <h1 id="pageTitle">课表总览</h1>
+      </div>
+      <div class="counters">
+        <div class="counter"><span class="counter-k">节次</span><b id="statCount">--</b></div>
+        <div class="counter"><span class="counter-k">教师</span><b id="statTeachers">--</b></div>
+        <div class="counter"><span class="counter-k">周次</span><b id="statWeeks">--</b></div>
+        <div class="counter counter-wide"><span class="counter-k">最近查询</span><b class="mono" id="statLast">--</b></div>
+      </div>
+      <div class="top-actions">
+        <div class="clock" id="clock" title="当前时间">--:--</div>
+        <span class="live-dot" id="liveDot" title="监控状态"></span>
+        <button class="btn ghost" id="exportCsvBtn" type="button" title="导出课程清单 CSV">
+          <svg class="ico"><use href="#i-download"></use></svg>
+        </button>
+        <button class="btn ghost" id="listBtn" type="button" title="课程清单（档案阵列）">
+          <svg class="ico"><use href="#i-list"></use></svg><span id="listCount">共 — 门</span>
+        </button>
+        <div class="pop-wrap">
+          <button class="btn ghost" id="lookBtn" type="button" aria-expanded="false" title="课表外观（下次启动保留）">
+            <svg class="ico"><use href="#i-glasses"></use></svg>
+          </button>
+          <div class="pop" id="lookPop">
+            <div class="pop-row">
+              <span class="pop-k">疏密</span>
+              <div class="density-btns" role="group" aria-label="课表疏密">
+                <button class="btn ghost sm" data-density="compact" type="button">紧凑</button>
+                <button class="btn ghost sm" data-density="standard" type="button">标准</button>
+                <button class="btn ghost sm" data-density="slim" type="button">瘦长</button>
+              </div>
+            </div>
+            <div class="pop-row">
+              <span class="pop-k">课表布局</span>
+              <div class="density-btns" role="group" aria-label="课表布局">
+                <button class="btn ghost sm" data-layout="duo" type="button" title="左右并排两周，右边放下一周">双周并排</button>
+                <button class="btn ghost sm" data-layout="original" type="button" title="原版：一周铺满整宽">原版</button>
+              </div>
+            </div>
+            <div class="pop-row">
+              <span class="pop-k">特效</span>
+              <div class="density-btns" role="group" aria-label="特效开关">
+                <button class="btn ghost sm" data-ui="frost" type="button">毛玻璃</button>
+                <button class="btn ghost sm" data-ui="drift" type="button">悬浮漂移</button>
+              </div>
+            </div>
+            <!-- 清单视图：三维阵列 / 上下分栏 / 表格。默认三维阵列。
+                 这张表格原来是阵列起不来时的降级台账，会自己冒出来。 -->
+            <div class="pop-row">
+              <span class="pop-k">清单视图</span>
+              <div class="density-btns" role="group" aria-label="课程清单视图">
+                <button class="btn ghost sm" data-listview="array" type="button"
+                        title="三维档案阵列占满整块">三维阵列</button>
+                <button class="btn ghost sm" data-listview="split" type="button"
+                        title="上方阵列、下方表格，各占一半">上下分栏</button>
+                <button class="btn ghost sm" data-listview="table" type="button"
+                        title="只用表格列出课程">表格</button>
+              </div>
+            </div>
+            <!--
+              档案阵列的画质档位。三维阵列是这份界面里唯一的重负载，
+              默认给「性能」档，卡的话往下调、想要好看往上调。
+              档位定义来自移植的 render-quality.js，不在这里另造一套参数。
+            -->
+            <div class="pop-row">
+              <span class="pop-k">阵列画质</span>
+              <div class="density-btns" role="group" aria-label="档案阵列画质">
+                <button class="btn ghost sm" data-array-quality="sharp" type="button">清晰</button>
+                <button class="btn ghost sm" data-array-quality="performance" type="button">性能</button>
+                <button class="btn ghost sm" data-array-quality="balanced" type="button">均衡</button>
+                <button class="btn ghost sm" data-array-quality="original" type="button">原始</button>
+                <button class="btn ghost sm" data-array-quality="high" type="button">高</button>
+              </div>
+            </div>
+            <div class="pop-row">
+              <span class="pop-k">超级性能</span>
+              <div class="density-btns" role="group" aria-label="超级性能模式">
+                <button class="btn ghost sm" data-array-super="on" type="button">开启</button>
+                <button class="btn ghost sm" data-array-super="off" type="button">关闭</button>
+              </div>
+            </div>
+            <div class="pop-note" id="arrayQualityHint">—</div>
+            <div class="pop-note" id="densityHint">—</div>
+          </div>
+        </div>
+        <div class="pop-wrap">
+          <button class="btn ghost" id="moreBtn" type="button" aria-expanded="false" title="更多操作">
+            <svg class="ico"><use href="#i-more"></use></svg>
+          </button>
+          <div class="pop pop-menu" id="morePop">
+            <button class="pop-item" id="refreshBtn" type="button">
+              <svg class="ico"><use href="#i-refresh"></use></svg><span>立即查询</span>
+            </button>
+            <button class="pop-item" id="testPushBtn" type="button">
+              <svg class="ico"><use href="#i-play"></use></svg><span>完整流程测试</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- ============ 课表总览（满高单屏：只有课表内部滚动） ============ -->
+      <section id="tab-schedule" class="tab active">
+        <section class="card deck">
+          <div class="nav-strip">
+            <div class="term-bar">
+              <span class="term-pill" id="termNow" title="当前查看的学期">—</span>
+              <!--
+                学年选择：按钮显示当前学年，点开是一列**只露 5 行**的列表，
+                右侧是原生滚动条（可拖），覆盖前后 20 年。
+                仍然用 <select> 当取值来源 —— 界面上其它地方都是读它的 .value，
+                只是把它从下拉框改成 size=5 的列表框，外面套一层弹层保持工具条高度不变。
+              -->
+              <span class="year-pick" id="yearPick">
+                <button class="term-sel year-trigger" id="yearBtn" type="button"
+                        aria-haspopup="listbox" aria-expanded="false" title="学年">—</button>
+                <select id="selYear" class="year-list" size="5"
+                        title="学年（拖动右侧滚动条翻看）" aria-label="学年"></select>
+              </span>
+              <select id="selSem" class="term-sel" title="学期" aria-label="学期"></select>
+              <button class="btn ghost sm" id="viewBtn" type="button">查看该学期</button>
+              <button class="btn ghost sm" id="importBtn" type="button" title="从 Excel（.xlsx）导入课表，导入后以它为准" aria-label="导入 Excel 课表">
+                <svg class="ico"><use href="#i-download"></use></svg>
+              </button>
+              <button class="btn ghost sm" id="editBtn" type="button" title="手动增删改课程" aria-label="编辑课表">
+                <svg class="ico"><use href="#i-list"></use></svg>
+              </button>
+            </div>
+            <div class="week-nav">
+              <button class="wk-btn" id="prevWeek" type="button" title="上一周" aria-label="上一周">
+                <svg class="ico"><use href="#i-chev-l"></use></svg>
+              </button>
+              <div class="wk-now">
+                <span id="weekLabel">第 1 周</span>
+                <span class="wk-date" id="weekDate"></span>
+                <span class="wk-count" id="weekCount"></span>
+              </div>
+              <button class="wk-btn" id="nextWeek" type="button" title="下一周" aria-label="下一周">
+                <svg class="ico"><use href="#i-chev-r"></use></svg>
+              </button>
+            </div>
+            <button class="btn ghost sm" id="todayWeek" type="button">回到本周</button>
+            <button class="btn ghost sm" id="calBtn" type="button">
+              <svg class="ico"><use href="#i-calendar"></use></svg>日历 / 设置第 1 周
+            </button>
+          </div>
+          <div class="ruler" id="ruler" role="group" aria-label="按周跳转，柱高表示该周课程数量"></div>
+        </section>
+
+        <div class="grid-wrap" id="gridWrap">
+          <div id="grid" class="kb"></div>
+          <div class="empty" id="emptyState">
+            <!--
+              空态：莱茵生命的标志动效。
+              曲线取上游 src/brand.ts 的 bootMarkContour —— 和侧栏 #i-rhine 是同一条
+              贝塞尔轮廓，但写成一条**闭合连续路径**：上游注释说明它是给开场的
+              「moving draw/erase ends」用的，那个小缺口靠 stroke dash 动画做，
+              不烘进路径里。
+              pathLength="100" 把轮廓长度归一化，于是 dash 参数就是百分比，
+              不用跟着真实路径长度改（真实长度由浏览器算，改路径就得重算）。
+              运动分两段，照上游 boot-logo-tracks.ts：
+                ① 描边从一点起笔、首尾同时生长，把整条轮廓画出来（strokeWidth 0.25→26）；
+                ② 画满后留 2.75% 的缺口，让缺口沿轮廓一直跑 —— 这是这个标志的签名动作，
+                   不是整枚标志闪烁。
+            -->
+            <svg class="rhine-mark-anim" viewBox="0 0 310 145" role="img" aria-label="莱茵生命">
+              <path class="rma-arc" pathLength="100"
+                    d="M295 73C295 41 273 15 240 15C221 15 207 23 192 38C186 43 181 47 176 52C127 96 103 128 70 128C38 128 15 101 15 70C15 39 37 15 70 15C103 15 127 48 156 75C182 99 208 128 240 128C273 128 295 105 295 73Z"/>
+              <path class="rma-sign" d="M44 70h50M69 45v50M219 70h44"/>
+            </svg>
+            <div class="empty-title">暂无课表数据</div>
+            <div class="empty-sub">在「设置」填好学号密码后，选好学年 / 学期点「查看该学期」拉取；新学期未开放会提示无数据</div>
+          </div>
+        </div>
+      </section>
+
+      <!--
+        ============ 课程清单（独立一栏，用三维档案阵列展示） ============
+        结构与样式照搬 RhineLabUI 主界面：
+          · 阵列铺满整块当底（ArchiveScene，移植自 src/scene.ts）
+          · 右侧一块档案详情：INTERNAL DATABASE / 分类 → FILE NUMBER → 课程名 → ACCESS FILE
+          · 左下计数、底部切档箭头与刻度
+        课表本身仍是原来的网格（在「课表总览」栏，未改动）；这里只是换一种看法。
+      -->
+      <section id="tab-list" class="tab">
+        <div class="stage-wrap" id="listStage" data-array="off">
+          <div class="three-scene" id="arrayStage"></div>
+          <div class="scene-atmosphere" aria-hidden="true"></div>
+
+          <!-- 右上：档案详情（上游 .archive-callout 的字段与排版） -->
+          <div class="archive-ui" id="archiveUi">
+            <div class="archive-callout">
+              <div class="eyebrow">
+                <span id="archiveSource">INTERNAL DATABASE</span>
+                <span id="archiveCategory">课程清单</span>
+              </div>
+              <!-- 上游 [data-action="open"] 就挂在这一块和 ACCESS FILE 上（main.ts:72）：
+                   点它或按 Enter 进检视。点阵列里的卡片只负责选中、放波浪。 -->
+              <div class="file-title" id="fileTitle" role="button" tabindex="0" title="打开检视">
+                <span>FILE NUMBER: <b id="fileNumber">X-001</b></span>
+              </div>
+              <div class="callout-rule"><i></i></div>
+              <div class="file-summary">
+                <span id="fileSummaryName">—</span>
+                <span id="fileSummaryMeta">—</span>
+              </div>
+              <div class="read-file" id="readFile" role="button" tabindex="0">
+                ACCESS FILE <span>→</span>
+              </div>
+            </div>
+
+            <!-- 左下：计数（上游 .archive-counter） -->
+            <div class="archive-counter">
+              <span class="tiny-label">ARCHIVE / SELECT</span>
+              <div>
+                <span id="selectedNumber">01</span>
+                <i>/</i>
+                <span class="count-total" id="countTotal">08</span>
+              </div>
+            </div>
+
+            <!-- 底部：切档箭头 + 八个刻度（上游 .archive-navigation / .file-ticks） -->
+            <div class="archive-navigation">
+              <button type="button" id="prevFile" aria-label="上一份">↑</button>
+              <div class="file-ticks" id="fileTicks" role="group" aria-label="档案刻度"></div>
+              <button type="button" id="nextFile" aria-label="下一份">↓</button>
+            </div>
+
+          </div>
+
+          <!-- 阵列没就绪前的占位：复用莱茵终端接入动效 -->
+          <div class="empty" id="listEmpty" data-state="loading">
+            <svg class="rhine-load" viewBox="0 0 260 170" role="img" aria-label="正在载入档案阵列">
+              <defs>
+                <clipPath id="rhine-clip-list">
+                  <g transform="translate(7 10.2) scale(.757)">
+                    <path d="M156 75C127 48 103 15 70 15C37 15 15 39 15 70S38 128 70 128C103 128 127 96 176 52M155 75C182 99 208 128 240 128C273 128 295 105 295 73S273 15 240 15C221 15 207 23 192 38"/>
+                  </g>
+                </clipPath>
+              </defs>
+              <g class="rl-ticks">
+                <path d="M4 74h9M4 79h16M4 84h9M4 89h13M4 94h9"/>
+                <path d="M256 74h-9M256 79h-16M256 84h-9M256 89h-13M256 94h-9"/>
+              </g>
+              <g class="rl-arcs">
+                <circle class="rl-arc rl-arc-a" cx="130" cy="82" r="46"/>
+                <circle class="rl-arc rl-arc-b" cx="130" cy="82" r="35"/>
+              </g>
+              <g class="rl-mark" transform="translate(7 10.2) scale(.757)">
+                <path class="rl-draw rl-draw-1" d="M156 75C127 48 103 15 70 15C37 15 15 39 15 70S38 128 70 128C103 128 127 96 176 52"/>
+                <path class="rl-draw rl-draw-2" d="M155 75C182 99 208 128 240 128C273 128 295 105 295 73S273 15 240 15C221 15 207 23 192 38"/>
+                <path class="rl-sign rl-sign-plus" d="M44 70h50M69 45v50"/>
+                <path class="rl-sign rl-sign-minus" d="M219 70h44"/>
+              </g>
+              <g class="rl-nodes">
+                <circle cx="130" cy="16" r="2.6"/>
+                <circle cx="18" cy="138" r="2.6"/>
+                <circle cx="242" cy="138" r="2.6"/>
+                <circle cx="130" cy="151" r="2.6"/>
+              </g>
+            </svg>
+            <div class="empty-title">正在载入档案阵列</div>
+            <div class="empty-sub">首次进入需要载入三维模型，稍候片刻</div>
+          </div>
+        </div>
+
+        <!-- 清单表格：显隐由外观设置控制（html.show-list-table），见 app.css 的 .list-wrap。
+             它同时是导出 CSV 的数据来源，所以节点一直保留。 -->
+        <div class="list-wrap" id="listFallback">
+          <table class="list-table">
+            <thead><tr><th>星期</th><th>节次</th><th>课程</th><th>教师</th><th>教室</th><th>周次</th></tr></thead>
+            <tbody id="listBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ 设置 ============ -->
+            <section id="tab-settings" class="tab">
+        <div class="form-grid">
+
+          <!-- 01 教务账号 -->
+          <section class="card">
+            <div class="card-head">
+              <h2 class="card-title"><svg class="ico"><use href="#i-cap"></use></svg>教务账号</h2>
+              <span class="sec-no">01</span>
+            </div>
+            <div class="field"><label for="base">教务系统地址</label>
+              <input id="base" placeholder="https://jwglxt.example.edu.cn/jwglxt"></div>
+            <div class="field"><label for="username">学号</label>
+              <input id="username" placeholder="学号"></div>
+            <div class="field"><label for="password">密码 <i class="help" data-help="只保存在本机 config.json，不会上传到任何地方。">?</i></label>
+              <div class="pw-row">
+                <input id="password" type="password" placeholder="教务系统密码">
+                <button class="btn ghost sm icon-btn" id="eyeBtn" type="button" title="显示 / 隐藏密码" aria-label="显示或隐藏密码">
+                  <svg class="ico"><use href="#i-eye"></use></svg>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- 02 推送与通知：通道 + 触发条件集成到一张卡 -->
+          <section class="card">
+            <div class="card-head">
+              <h2 class="card-title"><svg class="ico"><use href="#i-send"></use></svg>推送与通知</h2>
+              <span class="sec-no">02</span>
+            </div>
+            <div class="field"><label for="provider">推送通道</label>
+              <select id="provider">
+                <option value="wechat_ui">微信电脑版（本地自动化，免注册）</option>
+                <option value="serverchan">Server酱</option>
+                <option value="pushplus">PushPlus</option>
+                <option value="none">不推送</option>
+              </select>
+            </div>
+            <div class="field" id="wechatContactRow"><label for="wechatContact">发送到哪个会话 <i class="help" data-help="微信电脑版需已登录，并在微信设置里开启「按 Enter 键发送消息」。留空则发到文件传输助手。">?</i></label>
+              <input id="wechatContact" placeholder="默认：文件传输助手（发给你自己）">
+            </div>
+            <div class="field" id="sendkeyRow"><label for="sendkey">Server酱 SendKey</label>
+              <input id="sendkey" placeholder="SCT 开头的一串字符（sct.ftqq.com 扫码获取）">
+            </div>
+            <div class="field" id="pushplusRow"><label for="pushplusToken">PushPlus Token</label>
+              <input id="pushplusToken" placeholder="pushplus.plus 扫码获取的 token">
+            </div>
+            <div class="field">
+              <button class="btn ghost sm" id="previewPushBtn" type="button">
+                <svg class="ico"><use href="#i-eye"></use></svg>发一条课表样式预览
+              </button>
+              <i class="help" data-help="用示例课表生成一条和真实「课表出啦」一模一样的消息发到微信，先看样式（示例，非真实查询）。">?</i>
+            </div>
+            <hr class="rule">
+            <div class="block-title">什么情况下提醒</div>
+            <div class="switch-group">
+              <label class="switch"><input type="checkbox" id="onStart"><span class="track"></span><span>首次建立基线时提醒</span></label>
+              <label class="switch"><input type="checkbox" id="onWaiting"><span class="track"></span><span>课表还没出时，每个检查时间点都发一条</span></label>
+              <label class="switch"><input type="checkbox" id="onChange"><span class="track"></span><span>课表变化时提醒</span></label>
+              <label class="switch"><input type="checkbox" id="onError"><span class="track"></span><span>查询出错时提醒</span></label>
+            </div>
+          </section>
+
+          <!-- 03 监控与定时：开关 + 学期 + 时间 + 系统任务集成到一张卡 -->
+          <section class="card span-2">
+            <div class="card-head">
+              <h2 class="card-title"><svg class="ico"><use href="#i-clock"></use></svg>监控与定时</h2>
+              <span class="sec-no">03</span>
+            </div>
+
+            <label class="switch switch-lead"><input type="checkbox" id="monitorEnabled"><span class="track"></span><span><b>启用自动监控</b>（按下方时间自动查询并推送；关闭后仅在手动点击时查询）</span></label>
+
+            <div class="sub-grid">
+              <div class="sub-col">
+                <div class="block-title"><svg class="ico"><use href="#i-calendar"></use></svg>监控学期</div>
+                <label class="switch"><input type="checkbox" id="autoTerm"><span class="track"></span><span><b>按日期自动判断</b> <i class="help" data-help="关闭后会把后台每天的监控目标改成下方指定的学期——想等「新学期出课表」就请保持开启。">?</i></span></label>
+                <div class="field mt"><label for="xnm">学年 <i class="help" data-help="仅在关闭「按日期自动判断」时生效，用于指定后台监控哪个学期。">?</i></label>
+                  <input id="xnm" placeholder="如 2025-2026"></div>
+                <div class="field"><label for="xqm">学期</label>
+                  <select id="xqm">
+                    <option value="">（自动）</option>
+                    <option value="3">第一学期（秋季）</option>
+                    <option value="12">第二学期（春季）</option>
+                    <option value="16">第三学期（暑期）</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="sub-col">
+                <div class="block-title"><svg class="ico"><use href="#i-clock"></use></svg>自动检查时间</div>
+                <div id="timeChips" class="time-chips"></div>
+                <div class="time-add">
+                  <input type="time" id="newTime" value="10:00" step="60" aria-label="新增检查时间">
+                  <button class="btn ghost sm" id="addTimeBtn" type="button">
+                    <svg class="ico"><use href="#i-plus"></use></svg>添加
+                  </button>
+                </div>
+                <div class="hint">点时间标签上的 × 可移除；软件开着时按这些时间检查。</div>
+
+                <details class="adv">
+                  <summary>使用系统任务（关闭软件后仍能检查）</summary>
+                  <div class="adv-body">
+                    <div class="task-status" id="taskStatus">检查中…</div>
+                    <div class="hint">安装后交给 Windows 任务计划，关掉窗口也会按上面的时间检查。</div>
+                    <div class="task-btns">
+                      <button class="btn ghost sm" id="installTasks" type="button">安装系统任务</button>
+                      <button class="btn ghost sm" id="uninstallTasks" type="button">卸载系统任务</button>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="save-bar">
+          <span class="hint">修改后请保存；保存会立即重载学期目标并查询一次。</span>
+          <button class="btn solid" id="saveBtn" type="button">保存设置</button>
+        </div>
+      </section>
+
+      <!-- ============ 日志 ============ -->
+      <section id="tab-logs" class="tab">
+        <section class="card">
+          <div class="card-head">
+            <h2 class="card-title"><svg class="ico"><use href="#i-scroll"></use></svg>运行日志</h2>
+            <button class="btn ghost sm" id="clearLogBtn" type="button">
+              <svg class="ico"><use href="#i-trash"></use></svg>清空
+            </button>
+          </div>
+          <div class="console" id="logBox">（暂无日志）</div>
+        </section>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="toasts" role="status" aria-live="polite"></div>
+
+<!-- 课程清单：独立成一栏（原来的弹出抽屉挪到左侧栏） -->
+
+<!-- 手动编辑课表 -->
+<div class="modal-mask" id="editMask">
+  <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+    <div class="modal-head">
+      <span id="editTitle">编辑课表</span>
+      <span class="edit-source" id="editSource"></span>
+      <button class="modal-x" id="editClose" type="button" aria-label="关闭">
+        <svg class="ico"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="edit-bar">
+        <button class="btn ghost sm" id="editAdd" type="button">＋ 添加一行</button>
+        <button class="btn ghost sm" id="editFill" type="button" title="把当前显示的课表全部载入，便于在此基础上改">载入当前课表</button>
+        <span class="edit-count" id="editCount"></span>
+        <span class="edit-tip">星期填 1–7 或「周一」；节次填 1–2 这样的区间；周次填 1-16</span>
+      </div>
+      <div class="edit-scroll">
+        <table class="edit-table">
+          <thead>
+            <tr>
+              <th class="c-idx">#</th><th>星期</th><th>节次</th><th>课程名称</th>
+              <th>教师</th><th>教室</th><th>周次</th><th class="c-x"></th>
+            </tr>
+          </thead>
+          <tbody id="editBody"></tbody>
+        </table>
+      </div>
+      <div class="edit-foot">
+        <button class="btn solid sm" id="editSave" type="button">保存为当前课表</button>
+        <button class="btn ghost sm" id="editCancel" type="button">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 同一时段多门课的详情弹窗 -->
+<div class="modal-mask" id="slotMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="slotTitle">
+    <div class="modal-head">
+      <span id="slotTitle">课程详情</span>
+      <button class="modal-x" id="slotClose" type="button" aria-label="关闭">
+        <svg class="ico"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="slotBody"></div>
+  </div>
+</div>
+
+<!-- 自定义日历：设置第 1 周日期 / 点日期跳转到对应周 -->
+<div class="modal-mask" id="calMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="calTitle">
+    <div class="modal-head">
+      <span id="calTitle">日历</span>
+      <button class="modal-x" id="calClose" type="button" aria-label="关闭">
+        <svg class="ico"><use href="#i-close"></use></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="cal-set">
+        <label for="startDate">第 1 周周一日期</label>
+        <input type="date" id="startDate">
+        <button class="btn solid sm" id="saveStart" type="button">保存</button>
+        <button class="btn ghost sm" id="clearStart" type="button">清除</button>
+      </div>
+      <div class="hint">设定后：表格按周过滤课程，星期头会显示每周对应日期；点日历中的日期可跳到那一周。</div>
+      <div class="cal-nav">
+        <button class="wk-btn" id="calPrev" type="button" aria-label="上个月">
+          <svg class="ico"><use href="#i-chev-l"></use></svg>
+        </button>
+        <span id="calMonth">—</span>
+        <button class="wk-btn" id="calNext" type="button" aria-label="下个月">
+          <svg class="ico"><use href="#i-chev-r"></use></svg>
+        </button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

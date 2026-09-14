@@ -1,0 +1,60 @@
+# ---- 构建与依赖产物 ----
+build/
+dist/
+__pycache__/
+*.pyc
+.pydeps/
+node_modules/
+.tools/
+
+# ---- 三维渲染的 vendored 依赖与生成物（可由 kbapp/*.mjs 重建）----
+kbapp/web/vendor/three.global.js
+kbapp/web/vendor/rhine.global.js
+kbapp/web/vendor/models/*.js
+
+# ---- 运行期生成物（含账号/密码，不入库）----
+config.json
+kb_state.json
+monitor.log
+
+# ---- WebView2 用户数据目录（app.py 的 storage_path）----
+# 每次启动自动重建。里面除了页面缓存（会缓存渲染过的课表，含课程名与教师名），
+# 还有 Chromium 的 Login Data 凭据库与 Cookies —— 一旦误提交既是隐私泄漏
+# 也是一份可用的登录态。2026-09-14 发现 exe 运行后留下的这份缓存里仍是
+# 脱敏前的课表，已整体删除。
+webview_data/
+
+# ---- 运行期快照与界面偏好 ----
+# 2026-09-14 清理：这两个文件此前是被 git 跟踪的，而它们是「这台机器上这个人的课表」
+# 的真实快照（含教师姓名、课程名、教室、周次）与本地外观偏好 —— 既不该随源码分发，
+# 每次运行也会改动，制造无意义的 diff。现改为不入库，首次运行时自动重建。
+schedule_cache.json
+ui_prefs.json
+
+# ---- 打包好的可执行文件（体积大，可重新生成）----
+KbMonitor.exe
+
+# ---- 本地校验/预览临时目录 ----
+.tmp/
+
+# ---- 改造前的整包备份（含 exe，体积大）----
+# 注：2026-09-14 清理时删除。原注释称"还原方法见目录内 RESTORE.md"，
+# 实际五个 _backup_rhine_* 目录内都没有这个文件，属过期说明，已去掉。
+_backup_rhine_*/
+
+# ---- 清理产物（旧目录里自指的副本，不得入库）----
+_clean_20260914/
+
+# ---- 裁剪掉的上游大文件（2026-09-14 为控制仓库体积移除）----
+# three-0.183.0.tgz：内容已完全落入 vendor/three-src（运行源码）与 vendor/three-jms
+#   （examples/jsm，构建 addon 的来源），重建链不需要原包。需要时从 npm 取：
+#   npm pack three@0.183.0
+# MiSans 上游字体分片 24 MB：kbapp/web/fonts 下的子集已生成并随仓库分发，
+#   build_fonts.py 检测到子集存在就跳过；将来要重生成字体，需从 RhineLabUI
+#   上游仓库取回 public/fonts/misans-webfont-4.3.1/。
+three-0.183.0.tgz
+kbapp/RhineLabUI-main/public/fonts/misans-webfont-4.3.1/
+
+# ---- 开发预览壳（kbapp/make-preview.mjs 的生成物）----
+# 每次跑 npm run preview 都会整份重写，之前被跟踪导致界面一改就产生无谓 diff。
+kbapp/web/_shell.html

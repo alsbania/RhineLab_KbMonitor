@@ -1,0 +1,32 @@
+{
+  "name": "kbmonitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KbMonitor —— 正方教务系统（jwglxt）课表监控。Python 后端 + pywebview 桌面端，课程列表用 three.js 渲染成 RhineLabUI 风格的 3D 档案阵列。",
+  "//type": "刻意不声明 \"type\": \"module\" —— kbapp/*.mjs 靠扩展名已是 ESM，而 web_ui_test.js 是 CommonJS，声明 module 会让它 require 报错。",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node web_ui_test.js",
+    "port": "node kbapp/port-rhine.mjs",
+    "three": "node kbapp/build-three.mjs",
+    "rhine": "node kbapp/build-rhine.mjs",
+    "models": "python kbapp/build-models.py",
+    "fonts": "python kbapp/build_fonts.py",
+    "preview": "node kbapp/make-preview.mjs",
+    "icon": "python kbapp/gen_icon.py",
+    "assets": "npm run port && npm run three && npm run rhine && npm run models",
+    "build": "powershell -ExecutionPolicy Bypass -File kbapp/build_exe.ps1 -SkipDeps",
+    "build:ui": "powershell -ExecutionPolicy Bypass -File kbapp/build_exe.ps1 -SkipDeps -SkipThree"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "comments": {
+    "why-this-file-exists": "项目原先没有 package.json，esbuild 是散装 npm install 进 node_modules 的；kbapp 下三个 .mjs（port-rhine / build-three / build-rhine）都 import 它，缺了整套 3D bundle 重建链全断，而且没有任何地方记录版本。",
+    "esbuild": "node_modules/ 不入库（见 .gitignore）。克隆后先装依赖：npm install --registry=https://registry.npmmirror.com",
+    "three-js": "three.js 不走 npm：vendor/three-src 是 r183 运行源码，vendor/three-jms 是 examples/jsm（addon 来源）。两者都是 vendored 依赖，随仓库分发。",
+    "build-vs-build-ui": "build 只重打包界面，不重装 Python 依赖、也不重打 three bundle；从零构建先跑一次 python -m pip install --target .pydeps requests pywebview pyinstaller pillow"
+  }
+}

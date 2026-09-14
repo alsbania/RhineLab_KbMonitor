@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>课表查看器</title>
+<style>
+  body{font-family:"Microsoft YaHei",system-ui,sans-serif;margin:0;background:#f3f5f8;color:#222}
+  header{position:sticky;top:0;background:#fff;border-bottom:1px solid #d7dce2;padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;z-index:5;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  h1{font-size:16px;margin:0 6px 0 0;white-space:nowrap}
+  .info{color:#666;font-size:13px}
+  .btn{background:#35689f;color:#fff;border:0;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:13px}
+  .btn:disabled{background:#a9bdd4;cursor:not-allowed}
+  .wrap{padding:12px 14px;max-width:1120px;margin:0 auto}
+  #hint{color:#777;font-size:13px;padding:6px 2px;line-height:1.8}
+  table{border-collapse:collapse;background:#fff;width:100%;table-layout:fixed}
+  th,td{border:1px solid #d7dce2;vertical-align:top;padding:0}
+  th{background:#35689f;color:#fff;font-size:13px;padding:7px 4px}
+  td.period{width:46px;text-align:center;color:#888;font-size:12px;background:#f7f9fb}
+  .course{padding:4px 5px;border-bottom:1px dashed #eef0f3;font-size:12px;line-height:1.55;overflow:hidden}
+  .course:last-child{border-bottom:none}
+  .course .t{font-size:13px;font-weight:700;color:#1d3c63}
+  .course .m{color:#666}
+  .course .w{color:#8a6d00}
+  td.empty{background:#fbfcfd}
+  #list{margin-top:14px;background:#fff;border:1px solid #d7dce2;border-radius:6px;overflow:hidden}
+  #list table td, #list table th{padding:5px 8px;font-size:13px}
+  #list td{border-color:#e8ebef}
+  #list tr:nth-child(even){background:#fafbfc}
+  details{margin-top:12px;background:#fff;border:1px solid #d7dce2;border-radius:6px;padding:10px 12px}
+  pre{white-space:pre-wrap;word-break:break-all;max-height:280px;overflow:auto;font-size:11px;color:#444}
+</style>
+</head>
+<body>
+<header>
+  <h1>📅 课表查看器</h1>
+  <input type="file" id="file" accept=".json">
+  <button class="btn" id="csvBtn" disabled>导出 CSV</button>
+  <span class="info" id="info">导入 kb_*.json（从教务系统 xskbcx_cxXsKb 接口抓的课表数据）</span>
+</header>
+<div class="wrap">
+  <div id="hint"></div>
+  <table id="grid" style="display:none"></table>
+  <div id="list" style="display:none"></div>
+  <details id="rawBox" style="display:none"><summary>原始 JSON</summary><pre id="raw"></pre></details>
+</div>
+<script>
+(function () {
+  'use strict';
+  var week = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  var kb = [], meta = {};
+
+  function norm(v) { return v == null ? '' : String(v).trim(); }
+  function pick(o, keys, def) {
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (o && o[k] != null && norm(o[k]) !== '') return o[k];
+    }
+    return def == null ? '' : def;
+  }
+  function parseDay(it) {
+    var xq = norm(pick(it, ['xqjmc', 'xqjm', 'xqj', 'xingqi'], ''));
+    if (/^\d{1,2}$/.test(xq)) { var n = parseInt(xq, 10); return (n >= 1 && n <= 7) ? n : 0; }
+    var m = xq.match(/[一二三四五六日天1-7]/);
+    if (!m) return 0;
+    var g = m[0];
+    if (/[1-7]/.test(g)) return parseInt(g, 10);
+    var i = '一二三四五六日天'.indexOf(g);
+    return i >= 0 ? i + 1 : 0;
+  }
+  function parsePeriod(it) {
+    var raw = norm(pick(it, ['jcs', 'jc'], ''));
+    if (raw === '') raw = norm(pick(it, ['jcor', 'ksjc'], ''));
+    var m = raw.match(/(\d{1,2})\s*[-–—~至到]?\s*(\d{1,2})?/);
+    if (!m) return null;
+    var s = parseInt(m[1], 10), e = m[2] ? parseInt(m[2], 10) : s;
+    if (!m[2]) {
+      var j2 = norm(pick(it, ['jcel', 'jsjc'], ''));
+      if (/^\d{1,2}$/.test(j2)) e = parseInt(j2, 10);
+    }
+    return [Math.min(s, e), Math.max(s, e)];
+  }
+
+  function buildRows(list) {
+    var rows = [];
+    (list || []).forEach(function (it) {
+      if (typeof it !== 'object' || it === null) return;
+      var day = parseDay(it), p = parsePeriod(it);
+      if (!day || !p) return;
+      rows.push({
+        day: day, s: p[0], e: p[1],
+        name: norm(pick(it, ['kcmc', 'kcm', 'coursename'], '')),
+        teacher: norm(pick(it, ['skr', 'jsxm', 'js', 'teacher'], '')),
+        room: norm(pick(it, ['jxdd', 'jxcdmc', 'cdmc', 'room'], '')),
+        weeks: norm(pick(it, ['zcd', 'zcs', 'weeks'], '')),
+        raw: it
+      });
+    });
+    rows.sort(function (a, b) { return a.day - b.day || a.s - b.s; });
+    return rows;
+  }
+
+  function render() {
+    var hint = document.getElementById('hint');
+    var grid = document.getElementById('grid');
+    var listBox = document.getElementById('list');
+    var rawBox = document.getElementById('rawBox');
+    document.getElementById('info').textContent =
+      (meta.xnm ? meta.xnm + ' 学年 第' + meta.xqm + '学期 · ' : '') +
+      '共 ' + kb.length + ' 条课程记录';
+
+    if (!kb.length) {
+      grid.style.display = 'none'; listBox.style.display = 'none';
+      rawBox.style.display = '';
+      hint.innerHTML = '⚠️ 这个 JSON 里 <b>0 条课</b>。可能原因：<br>' +
+        '① 抓的时候学期参数(xnm/xqm)不对 —— 在课表页把"学年/学期"下拉切到有课的学期再查询后重新抓；<br>' +
+        '② 该学期确实还没排课或已归档不显示 —— 尝试相邻学期(2024-2025 / 2025-2026 的 3、12、16)；<br>' +
+        '③ 文件结构不对 —— 原始 JSON 已显示在下方，确认是否含 kbList 字段。';
+      return;
+    }
+
+    var maxP = 12;
+    kb.forEach(function (r) { if (r.e > maxP) maxP = r.e; });
+    if (maxP < 8) maxP = 8;
+
+    var thead = '<thead><tr><th></th>';
+    for (var d = 1; d <= 7; d++) thead += '<th>' + week[d - 1] + '</th>';
+    thead += '</tr></thead>';
+    var byDay = {};
+    kb.forEach(function (r) { (byDay[r.day] = byDay[r.day] || []).push(r); });
+
+    var body = '';
+    for (var p = 1; p <= maxP; p++) {
+      body += '<tr><td class="period">' + p + '</td>';
+      for (var d2 = 1; d2 <= 7; d2++) {
+        var segs = byDay[d2] || [];
+        var cell = '';
+        for (var i = 0; i < segs.length; i++) {
+          var r = segs[i];
+          if (r.s === p) {
+            var span = Math.min(r.e, maxP) - p + 1;
+            cell = '<td rowspan="' + span + '"><div class="course"><div class="t">' + esc(r.name) +
+              '</div><div class="m">' + esc(r.teacher) + (r.room ? ' · ' + esc(r.room) : '') +
+              '</div>' + (r.weeks ? '<div class="w">' + esc(r.weeks) + '</div>' : '') + '</div></td>';
+          } else if (r.s < p && r.e >= p) {
+            cell = ''; // 被上一格 rowspan 覆盖
+          } else if (r.e < p) {
+            continue;
+          } else { break; }
+        }
+        body += cell === '' ? '<td class="empty"></td>' : cell;
+      }
+      body += '</tr>';
+    }
+    grid.innerHTML = thead + '<tbody>' + body + '</tbody>';
+    grid.style.display = '';
+    if (!grid.style.tableLayout) grid.style.tableLayout = 'fixed';
+
+    var lh = '<table><thead><tr><th>星期</th><th>节次</th><th>课程</th><th>教师</th><th>教室</th><th>周次</th></tr></thead><tbody>';
+    kb.forEach(function (r) {
+      lh += '<tr><td>' + week[r.day - 1] + '</td><td>' + r.s + (r.e !== r.s ? '-' + r.e : '') +
+        '</td><td>' + esc(r.name) + '</td><td>' + esc(r.teacher) + '</td><td>' + esc(r.room) +
+        '</td><td>' + esc(r.weeks) + '</td></tr>';
+    });
+    lh += '</tbody></table>';
+    listBox.innerHTML = lh;
+    listBox.style.display = '';
+    rawBox.style.display = '';
+    document.getElementById('raw').textContent =
+      JSON.stringify({ meta: meta, count: kb.length, kbList: kb.map(function (r) { return r.raw; }) }, null, 2);
+    hint.innerHTML = '绿色背景 = 课时；多行代表同一时段有多条记录（如单双周）。可点击"导出 CSV"存 Excel。';
+    document.getElementById('csvBtn').disabled = false;
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  document.getElementById('file').addEventListener('change', function (ev) {
+    var f = ev.target.files[0];
+    if (!f) return;
+    var rd = new FileReader();
+    rd.onload = function () {
+      try {
+        var obj = JSON.parse(rd.result);
+        var list = null;
+        if (Array.isArray(obj)) list = obj;
+        else if (obj && Array.isArray(obj.kbList)) { list = obj.kbList; meta = obj; }
+        else if (obj && obj.data && Array.isArray(obj.data.kbList)) { list = obj.data.kbList; meta = obj.data; }
+        else if (obj && Array.isArray(obj.rows)) list = obj.rows;
+        if (list === null) throw new Error('没找到课表数组');
+        kb = buildRows(list);
+        if (!meta.xnm && obj && obj.xnm) meta = obj;
+        render();
+      } catch (err) {
+        kb = []; meta = {};
+        document.getElementById('hint').innerHTML = '❌ 解析失败：' + esc(err.message) +
+          '　请确认导入的是教务接口返回的 JSON（kbList 数组所在文件）。';
+        grid.style.display = 'none'; listBox.style.display = 'none';
+        document.getElementById('csvBtn').disabled = true;
+      }
+    };
+    rd.readAsText(f, 'utf-8');
+  });
+
+  document.getElementById('csvBtn').addEventListener('click', function () {
+    var lines = ['星期,节次,课程,教师,教室,周次'];
+    kb.forEach(function (r) {
+      lines.push([week[r.day - 1], r.s + (r.e !== r.s ? '-' + r.e : ''),
+        '"' + r.name.replace(/"/g, '""') + '"',
+        '"' + r.teacher.replace(/"/g, '""') + '"',
+        '"' + r.room.replace(/"/g, '""') + '"',
+        '"' + r.weeks.replace(/"/g, '""') + '"'].join(','));
+    });
+    var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '课表.csv';
+    a.click();
+  });
+})();
+</script>
+</body>
+</html>

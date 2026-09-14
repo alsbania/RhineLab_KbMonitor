@@ -1,0 +1,45 @@
+{
+  "_readme": "把本文件复制为 config.json 后填写。首次启动 KbMonitor.exe 时会自动生成 config.json（内容与本文件一致），直接在界面里改即可，无需手工编辑。password 只存本机 config.json，该文件已在 .gitignore 中，切勿提交或放进网盘。",
+  "base": "请填教务系统根地址，例如 https://jwglxt.example.edu.cn/jwglxt",
+  "auth": {
+    "mode": "login",
+    "username": "在这里填学号",
+    "password": "",
+    "encrypt": "auto",
+    "cookie": "",
+    "cookie_file": ""
+  },
+  "term": {
+    "auto": true,
+    "xnm": "",
+    "xqm": "3",
+    "start_date": ""
+  },
+  "push": {
+    "provider": "none",
+    "sendkey": "",
+    "pushplus_token": "",
+    "wechat_contact": ""
+  },
+  "notify": {
+    "on_start": true,
+    "on_waiting": true,
+    "on_change": true,
+    "on_error": true
+  },
+  "schedule": {
+    "times": [
+      "10:00",
+      "11:00",
+      "12:00",
+      "14:00",
+      "17:00"
+    ]
+  },
+  "monitor": {
+    "enabled": true
+  },
+  "ui": {
+    "density": "standard"
+  }
+}

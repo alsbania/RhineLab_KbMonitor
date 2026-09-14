@@ -1,0 +1,19 @@
+{
+  "name": "rhine-archive-array",
+  "source": "RhineLabUI src/scene.ts 及其依赖（kbapp/port-rhine.mjs 逐行移植）",
+  "builtBy": "kbapp/build-rhine.mjs",
+  "format": "iife（经典脚本，暴露全局 RHINE）",
+  "exposes": [
+    "THREE",
+    "ArchiveScene",
+    "RhineArray",
+    "coursesToRecords",
+    "motion",
+    "archiveDrag",
+    "archiveLoop",
+    "dataApi",
+    "rolling"
+  ],
+  "bytes": 2138257,
+  "inputs": 47
+}
